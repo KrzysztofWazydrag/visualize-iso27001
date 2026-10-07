@@ -1,192 +1,91 @@
-# 10x Astro Starter
+# Visualize ISO 27001
 
-![](./public/template.png)
+An interactive ISMS engine room for learning how risks, control decisions, implementation, evidence and improvement connect. This is a frontend-only educational application built from a new fork of [the 10xDevs Astro starter](https://github.com/przeprogramowani/10x-astro-starter).
 
-A modern, opinionated starter template for building fast, accessible web applications.
+## Run locally
 
-## Tech Stack
-
-- [Astro](https://astro.build/) v7 - Modern web framework with server-first rendering
-- [React](https://react.dev/) v19 - UI library for interactive components
-- [TypeScript](https://www.typescriptlang.org/) v6 - Type-safe JavaScript
-- [Tailwind CSS](https://tailwindcss.com/) v4 - Utility-first CSS framework
-- [Supabase](https://supabase.com/) - Authentication and backend-as-a-service
-- [Cloudflare Workers](https://workers.cloudflare.com/) - Edge deployment runtime
-
-## Prerequisites
-
-- Node.js v22.14.0 (as specified in `.nvmrc`)
-- npm (comes with Node.js)
-
-## Getting Started
-
-1. Clone the repository:
+Use Node 24 (see `.nvmrc`), then:
 
 ```bash
-git clone https://github.com/przeprogramowani/10x-astro-starter.git
-cd 10x-astro-starter
-```
-
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Set up Supabase and configure environment variables — see [Supabase Configuration](#supabase-configuration) below.
-
-4. Create a `.dev.vars` file for local Cloudflare dev secrets:
-
-```bash
-cp .env.example .dev.vars
-```
-
-5. Run the development server:
-
-```bash
+npm ci
 npm run dev
 ```
 
-## Available Scripts
-
-- `npm run dev` - Start development server (Cloudflare workerd runtime)
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint with type-checked rules
-- `npm run lint:fix` - Auto-fix ESLint issues
-- `npm run format` - Run Prettier
-- `npm run smoke` - Smoke test the auth flow against a running server (`BASE_URL`, defaults to `http://localhost:4321`)
-
-## Project Structure
-
-```md
-.
-├── src/
-│ ├── layouts/ # Astro layouts
-│ ├── pages/ # Astro pages
-│ │ └── api/ # API endpoints
-│ ├── components/ # UI components (Astro & React)
-│ └── assets/ # Static assets
-├── public/ # Public assets
-├── wrangler.jsonc # Cloudflare Workers config
-```
-
-## Supabase Configuration
-
-This project uses [Supabase](https://supabase.com/) for authentication. Environment variables are declared via Astro's `astro:env` schema and are treated as **server-only secrets** — they are never exposed to the client.
-
-### First-time setup (local, no cloud project needed)
-
-Requires [Docker](https://www.docker.com/) and ~7 GB RAM.
-
-1. Create your `.env` file:
+Open the local URL shown by Astro, normally `http://localhost:4321`.
 
 ```bash
-cp .env.example .env
+npm run verify    # lint, strict Astro/TypeScript check, 12 model/playback tests, static build
+npm run preview   # serve the production build
 ```
 
-2. Initialize the local Supabase project (creates a `supabase/` config folder):
+No `.env` file, secrets, login or external service is needed. Fonts and all learning content are bundled locally. Runtime state is held in memory; refreshing resets the simulation while retaining the view hash.
+
+## Explore
+
+- **ISMS Map:** clauses 4–10 and the separate Annex A reference set. Select nodes to explore incoming/outgoing relationships and practical explanations.
+- **Document Flow:** 26 connected concepts with meaningful relationships, highlighted selected connections and feedback loops. All the requested common artefacts are included.
+- **Scenario Mode:** one complete 21-step laptop-encryption example. Play/Pause, Previous/Next, Restart, phase jumps, step jumps and speed control. Active paths carry animated information packets. The information ledger shows simulated changes accumulating in artefacts.
+- **Control Explorer:** 6 sample controls across all four Annex A categories. Search/filter, implementation examples, risks, policies, evidence and audit questions.
+- **Audit Mode:** 3 lightweight evidence exercises on encryption, asset inventory and training. Reveal examples and discuss what they prove, their limitations and how to gain assurance.
+
+Nodes are keyboard-operable buttons. The graph viewport supports scrolling and zoom; a searchable node directory provides an alternative. Narrow screens stack the learning panel below the visualisation and allow native graph panning. The guide dialog traps focus and closes with Escape. Reduced-motion preferences suppress the travelling animation.
+
+## Architecture and main files
+
+Astro produces one static HTML page with a React learning island. React, Tailwind and the Button/cn components already existed in the starter; no additional UI or graph framework was added. Hash views work on ordinary static hosting without rewrite rules. There is no runtime API.
+
+| Location                                    | Responsibility                                                                         |
+| ------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `src/types.ts`                              | Educational and visualisation contracts                                                |
+| `src/data/`                                 | Nodes, relationships, clauses, controls, audit examples, scenarios and layout metadata |
+| `src/components/engine/EngineRoom.tsx`      | Shell, navigation and shared state                                                     |
+| `src/components/engine/Graph.tsx`           | Shared button/SVG visualisation with active paths and animated packets                 |
+| `src/components/engine/LearningPanel.tsx`   | Concise learning detail and navigable relationships                                    |
+| `src/components/engine/ScenarioPlayer.tsx`  | Playback controls, phase navigation and artefact change ledger                         |
+| `src/components/engine/ControlExplorer.tsx` | Data-driven control search and filtering                                               |
+| `src/components/engine/AuditMode.tsx`       | Implementation → evidence → assurance exercises                                        |
+| `src/lib/graph.ts`                          | Routes connections through layout gutters                                              |
+| `src/lib/state.ts`, `src/lib/playback.ts`   | Bounded playback and cumulative simulated artefact state                               |
+| `src/styles/global.css`                     | Original dark design using the starter’s CSS token approach                            |
+| `tests/model.test.ts`                       | Reference integrity, content scope, feedback and playback acceptance tests             |
+| `docs/ARCHITECTURE.md`                      | Starter inspection and implementation decisions                                        |
+| `docs/VERIFICATION.md`                      | Build, browser and responsive verification record                                      |
+
+To add a control, append a structured record in `src/data/controls.ts`; it automatically appears in the explorer and learning panel. To add a scenario, provide ordered steps referencing existing node/relationship IDs, then register it in `src/data/scenarios.ts`. V1 selects the single laptop scenario. Additional graph concepts require an educational record, meaningful relationships and a position in the chosen layout. Run the model tests to catch broken references.
+
+## Static deployment
+
+`npm run build` creates `dist/`. Serve its contents with any ordinary static website host. For example:
 
 ```bash
-npx supabase init
+python3 -m http.server 4321 --directory dist
 ```
 
-3. Start the local stack (downloads Docker images on first run):
+The default configuration serves at a domain root. For hosting under a path such as `/visualize-iso27001/`, set Astro’s `base` option to that path and rebuild. Navigation uses hashes and the favicon uses `BASE_URL`.
 
-```bash
-npx supabase start
-```
+Starter authentication, Supabase packages/configuration, middleware, API routes, protected dashboard, server adapter, Wrangler configuration, environment schema and auth CI have been removed. CI installs dependencies and verifies the static application without repository secrets.
 
-4. Copy the credentials printed by the CLI into your `.env` and `.dev.vars`:
+## Educational boundaries and references
 
-```
-SUPABASE_URL=http://127.0.0.1:54321
-SUPABASE_KEY=<anon key from CLI output>
-```
+Content uses original practical summaries. It distinguishes management-system requirements, control references, artefacts, operational measures, evidence and assurance. Names, owners, timings, company facts and scores in the scenario are fictional examples. The risk matrix is an example, not an ISO-prescribed formula. An ISMS has multiple paths and feedback loops; the scenario is one teaching narrative.
 
-5. To stop the stack when done:
+The SoA explains necessary controls, inclusion reasons, implementation status and reasons for excluding Annex A references. Necessary custom controls can also be included. The full set of Annex A references must be considered for omissions; controls are not all automatically required.
 
-```bash
-npx supabase stop
-```
+Primary references checked while preparing content:
 
-The local Studio UI is available at `http://localhost:54323`.
+- [ISO/IEC 27001 overview](https://www.iso.org/standard/27001)
+- [SC 27-hosted SoA auditing practices discussion](https://committee.iso.org/files/live/sites/jtc1sc27/files/resources/ISO-IECJTC1-SC27-WG1_N3298_Auditing%20Practices%20Note%20-%20SoA.pdf) — educational discussion paper, not endorsed normative guidance.
+- [Astro static deployment documentation](https://docs.astro.build/en/guides/deploy/)
+- [Astro React integration documentation](https://docs.astro.build/en/guides/integrations-guide/react/)
 
-No database tables or migrations are required — this project uses Supabase Auth's built-in `auth.users` table only.
+This application does not reproduce the ISO standard and is not a compliance or certification assessment.
 
-### Using a cloud Supabase project instead
+## Limitations and intentionally deferred work
 
-If you prefer to use a hosted Supabase project, add these variables to your `.env` and `.dev.vars` files:
+The graph uses deterministic layouts and native scrolling rather than drag-to-rearrange nodes. Relationships are an explanatory sample, not an exhaustive representation of every organisation. Only one scenario, six control references and three evidence exercises are included. The full standard remains the authoritative source; a qualified content review would be useful before broader educational publication.
 
-| Variable       | Description                                                |
-| -------------- | ---------------------------------------------------------- |
-| `SUPABASE_URL` | Project URL from Supabase dashboard → Settings → API       |
-| `SUPABASE_KEY` | `anon` public key from Supabase dashboard → Settings → API |
+Intentionally deferred: full 93-control dataset, additional scenarios, full audit simulation, certification tracking, saving learner progress, real documents or organisation-specific ISMS data. Authentication, user accounts, databases, backend persistence, organisation management, commercial SaaS features and billing are outside this MVP.
 
-```
-SUPABASE_URL=https://<project-ref>.supabase.co
-SUPABASE_KEY=<anon-key>
-```
+## Starter attribution
 
-### Email confirmation in local development
-
-By default Supabase requires email confirmation before a user can sign in. To skip this during local development:
-
-1. Open the Supabase dashboard for your project
-2. Go to **Authentication → Email → Confirm email**
-3. Toggle it **off**
-
-Users can then sign in immediately after sign-up without clicking a confirmation link.
-
-### Auth routes
-
-| Route                 | Description                                                             |
-| --------------------- | ----------------------------------------------------------------------- |
-| `/auth/signin`        | Email/password sign-in form                                             |
-| `/auth/signup`        | Email/password sign-up form                                             |
-| `/auth/confirm-email` | Post-signup "check your inbox" page                                     |
-| `/dashboard`          | Example protected page (redirects to `/auth/signin` if unauthenticated) |
-
-Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_ROUTES` array there to require authentication.
-
-## Deployment
-
-This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/).
-
-1. Build the project:
-
-```bash
-npm run build
-```
-
-2. Deploy with Wrangler:
-
-```bash
-npx wrangler deploy
-```
-
-Set `SUPABASE_URL` and `SUPABASE_KEY` as secrets in your Cloudflare dashboard or via `npx wrangler secret put`.
-
-## Smoke test
-
-`scripts/smoke.mjs` is a dependency-free Node script that walks the whole auth flow (sign-up, sign-in, protected page, sign-out) over HTTP. Run it against the dev server or the production preview after dependency upgrades:
-
-```bash
-npm run dev            # or: npm run build && npm run preview
-BASE_URL=http://localhost:4321 npm run smoke
-```
-
-It needs a reachable Supabase instance (local or cloud) with email confirmation disabled.
-
-> **Note:** this script exists primarily to guard the development of the starter itself — it is a fast sanity check that dependency upgrades did not break the build, the Cloudflare adapter or the Supabase auth flow. It is **not** a substitute for a real test suite. Once you build your own product on top of this starter, add proper tests (unit, integration, end-to-end) suited to your application.
-
-## CI
-
-GitHub Actions runs two jobs on every push and PR to `master`:
-
-- **ci** — lint, `astro check` and build. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets for the build step.
-- **smoke** — starts a local Supabase via the Supabase CLI, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. No secrets required.
-
-## License
-
-MIT
+The upstream starter README declares an MIT license. This project preserves its Git history and records the upstream commit in `docs/ARCHITECTURE.md`. No SiteCrew repository or project files were used or modified.

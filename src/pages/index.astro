@@ -1,8 +1,12 @@
 ---
-import Welcome from "@/components/Welcome.astro";
 import Layout from "@/layouts/Layout.astro";
+import { EngineRoom } from "@/components/engine/EngineRoom";
 ---
 
 <Layout>
-  <Welcome />
+  <EngineRoom client:load />
+  <noscript>
+    This interactive visualisation requires JavaScript. Enable it to explore the local learning content; no external
+    service is needed.
+  </noscript>
 </Layout>
