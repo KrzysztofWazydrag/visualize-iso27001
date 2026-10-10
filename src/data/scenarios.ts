@@ -1,15 +1,6 @@
-import type { Scenario, ScenarioStep, ArtefactChange } from "../types";
-import { relationshipId } from "./relationships";
-interface StepInput {
-  title: string;
-  phase: ScenarioStep["phase"];
-  nodes: string[];
-  links?: [string, string][];
-  explanation: string;
-  takeaway: string;
-  packet: string;
-  changes: [string, string, string][];
-}
+import type { Scenario } from "../types";
+import { buildSteps, type StepInput } from "./scenarioSteps";
+import { missingJustificationScenario } from "./missingJustification";
 const steps: StepInput[] = [
   {
     title: "A security issue is spotted",
@@ -71,18 +62,19 @@ const steps: StepInput[] = [
   {
     title: "Decide how to respond",
     phase: "Treat",
-    nodes: ["register", "treatment"],
-    links: [["register", "treatment"]],
+    nodes: ["register", "decision"],
+    links: [["register", "decision"]],
     explanation:
       "The owner decides to modify the risk through enforced encryption and reliable enrollment. Retaining, avoiding or sharing risk are other options to consider; contractual protection needs still apply.",
     takeaway: "Treatment is an accountable decision, not an automatic technical fix.",
     packet: "Treatment decision: modify",
-    changes: [["treatment", "Decision", "Modify risk · enforce encryption and enrollment"]],
+    changes: [["decision", "Decision", "Mitigate / modify risk · enforce encryption and enrollment"]],
   },
   {
     title: "Turn the decision into an approved plan",
     phase: "Treat",
-    nodes: ["treatment"],
+    nodes: ["decision", "treatment"],
+    links: [["decision", "treatment"]],
     explanation:
       "The risk owner approves actions: the endpoint team will enforce encryption, secure recovery keys and reconcile the fleet. The plan names an owner, a target date and how residual risk will be evaluated and accepted.",
     takeaway: "An action needs an owner, timing and a way to verify success.",
@@ -92,8 +84,11 @@ const steps: StepInput[] = [
   {
     title: "Check the control reference set",
     phase: "Treat",
-    nodes: ["treatment", "annex"],
-    links: [["treatment", "annex"]],
+    nodes: ["treatment", "selection", "annex"],
+    links: [
+      ["treatment", "selection"],
+      ["selection", "annex"],
+    ],
     explanation:
       "The team first determines needed safeguards, then compares them with Annex A. A.8.24 supports cryptography, A.8.1 endpoint protection and A.8.9 controlled configuration; A.5.9 helps ensure complete asset coverage.",
     takeaway: "Annex A helps check for omissions; the business need drives the controls.",
@@ -103,9 +98,9 @@ const steps: StepInput[] = [
   {
     title: "Make the applicability decision traceable",
     phase: "Treat",
-    nodes: ["treatment", "soa", "annex"],
+    nodes: ["treatment", "selection", "annex", "soa"],
     links: [
-      ["treatment", "soa"],
+      ["selection", "soa"],
       ["annex", "soa"],
     ],
     explanation:
@@ -275,17 +270,6 @@ export const laptopScenario: Scenario = {
   title: "The unencrypted laptop",
   description:
     "Company laptops do not have encryption consistently enforced. Follow one issue through the whole management system.",
-  steps: steps.map((s, index) => ({
-    id: `laptop-${index + 1}`,
-    order: index + 1,
-    title: s.title,
-    phase: s.phase,
-    activeNodes: s.nodes,
-    activeRelationships: (s.links ?? []).map(([source, target]) => relationshipId(source, target)),
-    explanation: s.explanation,
-    takeaway: s.takeaway,
-    packet: s.packet,
-    artefactChanges: s.changes.map(([artefact, field, value]): ArtefactChange => ({ artefact, field, value })),
-  })),
+  steps: buildSteps("laptop", steps),
 };
-export const scenarios: Scenario[] = [laptopScenario];
+export const scenarios: Scenario[] = [laptopScenario, missingJustificationScenario];

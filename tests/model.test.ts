@@ -4,11 +4,20 @@ import { nodes, nodeById, artefactNodes } from "../src/data/nodes";
 import { clauses } from "../src/data/clauses";
 import { controls } from "../src/data/controls";
 import { relationships, relationshipById } from "../src/data/relationships";
-import { laptopScenario } from "../src/data/scenarios";
-import { documentLayout, mapLayout, scenarioLayout, NODE_WIDTH, NODE_HEIGHT } from "../src/data/layouts";
+import { laptopScenario, scenarios } from "../src/data/scenarios";
+import {
+  documentLayout,
+  mapLayout,
+  scenarioLayout,
+  scenarioLayouts,
+  NODE_WIDTH,
+  NODE_HEIGHT,
+} from "../src/data/layouts";
+import { treatmentJourney } from "../src/data/learningPaths";
+import { missingJustificationScenario } from "../src/data/missingJustification";
 import { auditPrompts } from "../src/data/audit";
 import { initialState, reduceState } from "../src/lib/state";
-import { snapshotAt } from "../src/lib/playback";
+import { snapshotAt, firstUnresolvedDecision } from "../src/lib/playback";
 
 await test("every concept has a unique identity and usable learning content", () => {
   assert.equal(new Set(nodes.map((n) => n.id)).size, nodes.length);
@@ -43,7 +52,7 @@ await test("requirements, the reference set and the limited control dataset stay
   );
   assert.ok(clauses.every((c) => nodeById[c.id].type === "requirement"));
   assert.equal(nodeById.annex.type, "control");
-  assert.equal(controls.length, 6);
+  assert.ok(controls.length >= 10 && controls.length < 93);
   assert.equal(new Set(controls.map((c) => c.category)).size, 4);
   [...clauses, ...controls].forEach((c) => {
     c.relatedNodes.forEach((id) => {
@@ -59,7 +68,7 @@ await test("all relationships connect real concepts and explain their meaning", 
   });
 });
 await test("layouts cover the educational scope and keep nodes in bounds", () => {
-  [documentLayout, mapLayout, scenarioLayout].forEach((layout) => {
+  [documentLayout, mapLayout, ...Object.values(scenarioLayouts)].forEach((layout) => {
     assert.equal(new Set(layout.positions.map((p) => p.id)).size, layout.positions.length);
     layout.positions.forEach((p) => {
       assert.ok(nodeById[p.id], p.id);
@@ -165,4 +174,145 @@ await test("audit examples connect valid controls to implementation, evidence an
     assert.ok(controls.some((c) => c.id === prompt.controlId));
     assert.ok(prompt.implementation && prompt.assurance && prompt.pitfall && prompt.evidence.length >= 3);
   });
+});
+await test("the learning trail makes treatment and control selection precede the SoA", () => {
+  const ids = treatmentJourney.steps.map((step) => step.nodeId);
+  assert.deepEqual(ids.slice(0, 8), [
+    "risk",
+    "assessment",
+    "register",
+    "decision",
+    "treatment",
+    "selection",
+    "annex",
+    "soa",
+  ]);
+  treatmentJourney.relationships.forEach((id, index) => {
+    const relationship = relationshipById[id];
+    assert.ok(relationship, id);
+    assert.equal(relationship.source, ids[index]);
+    assert.equal(relationship.target, ids[index + 1]);
+  });
+  assert.match(treatmentJourney.note, /Requirements can also drive controls/);
+});
+await test("both scenarios have complete, visible and connected steps", () => {
+  assert.deepEqual(
+    scenarios.map((scenario) => scenario.steps.length),
+    [21, 18],
+  );
+  scenarios.forEach((scenario) => {
+    const layout = scenarioLayouts[scenario.id];
+    assert.ok(layout);
+    assert.equal(new Set(scenario.steps.map((step) => step.id)).size, scenario.steps.length);
+    scenario.steps.forEach((step, index) => {
+      assert.equal(step.order, index + 1);
+      assert.ok(step.explanation && step.takeaway && step.packet && (step.artefactChanges.length || step.decision));
+      step.activeNodes.forEach((id) => {
+        assert.ok(
+          layout.positions.some((position) => position.id === id),
+          `${step.id}: ${id}`,
+        );
+      });
+      step.activeRelationships.forEach((id) => {
+        const relationship = relationshipById[id];
+        assert.ok(relationship, id);
+        assert.ok(
+          step.activeNodes.includes(relationship.source) && step.activeNodes.includes(relationship.target),
+          `${step.id}: ${id}`,
+        );
+      });
+      step.artefactChanges.forEach((change) => {
+        assert.ok(nodeById[change.artefact], change.artefact);
+      });
+      if (step.decision) {
+        assert.equal(new Set(step.decision.options.map((option) => option.id)).size, step.decision.options.length);
+        assert.ok(step.decision.options.some((option) => option.id === step.decision?.continueWith));
+        step.decision.options.forEach((option) => {
+          assert.ok(option.description && option.feedback);
+        });
+      }
+    });
+  });
+});
+await test("autoplay stops at the unanswered treatment choice and a paused tick cannot skip it", () => {
+  const scenario = missingJustificationScenario;
+  let state = reduceState(initialState, { type: "scenario", scenario }, laptopScenario);
+  state = reduceState(state, { type: "toggle" }, scenario);
+  for (let i = 0; i < 30; i++) state = reduceState(state, { type: "tick" }, scenario);
+  assert.equal(state.stepIndex, 11);
+  assert.equal(state.playing, false);
+  state = reduceState(state, { type: "toggle" }, scenario);
+  state = reduceState(state, { type: "move", direction: 1 }, scenario);
+  state = reduceState(state, { type: "jump", index: 17 }, scenario);
+  assert.equal(state.stepIndex, 11);
+  assert.equal(state.playing, false);
+});
+await test("exploring the other treatment options cannot adopt mitigation or unlock later artefacts", () => {
+  const scenario = missingJustificationScenario;
+  let state = reduceState(initialState, { type: "scenario", scenario }, laptopScenario);
+  state = reduceState(state, { type: "jump", index: 11 }, scenario);
+  ["accept", "transfer", "avoid"].forEach((optionId) => {
+    state = reduceState(state, { type: "choose", optionId }, scenario);
+    state = reduceState(state, { type: "jump", index: 17 }, scenario);
+    assert.equal(state.stepIndex, 11);
+    assert.equal(firstUnresolvedDecision(scenario, state.choices), 11);
+    const snapshot = snapshotAt(scenario, 17, state.choices);
+    assert.equal(
+      snapshot.some((change) => change.field === "R-027 plan"),
+      false,
+    );
+    assert.match(
+      snapshot.find((change) => change.field === "Learner treatment choice")?.value ?? "",
+      /explored, not adopted/,
+    );
+    assert.match(snapshot.find((change) => change.field === "NC-004")?.value ?? "", /^Open/);
+  });
+  const unchanged = reduceState(state, { type: "choose", optionId: "unknown" }, scenario);
+  assert.deepEqual(unchanged, state);
+});
+await test("choosing mitigation unlocks a justified plan, SoA and verified closure", () => {
+  const scenario = missingJustificationScenario;
+  let state = reduceState(initialState, { type: "scenario", scenario }, laptopScenario);
+  state = reduceState(state, { type: "jump", index: 11 }, scenario);
+  state = reduceState(state, { type: "choose", optionId: "mitigate" }, scenario);
+  state = reduceState(state, { type: "move", direction: 1 }, scenario);
+  assert.equal(state.stepIndex, 12);
+  state = reduceState(state, { type: "jump", index: 17 }, scenario);
+  assert.equal(state.stepIndex, 17);
+  const snapshot = snapshotAt(scenario, state.stepIndex, state.choices);
+  assert.match(snapshot.find((change) => change.field === "R-027 plan")?.value ?? "", /approval and review criteria/);
+  assert.match(
+    snapshot.find((change) => change.field === "A.7.1–A.7.4")?.value ?? "",
+    /R-027.*mitigation.*commitment.*verified/,
+  );
+  assert.match(snapshot.find((change) => change.field === "NC-004")?.value ?? "", /^Closed/);
+  assert.match(snapshot.find((change) => change.field === "Residual assessment")?.value ?? "", /owner accepted/);
+});
+await test("revisiting a choice, restarting, replaying and switching scenarios do not leak decisions", () => {
+  const scenario = missingJustificationScenario;
+  let state = reduceState(initialState, { type: "scenario", scenario }, laptopScenario);
+  state = reduceState(state, { type: "jump", index: 11 }, scenario);
+  state = reduceState(state, { type: "choose", optionId: "mitigate" }, scenario);
+  state = reduceState(state, { type: "jump", index: 17 }, scenario);
+  state = reduceState(state, { type: "jump", index: 11 }, scenario);
+  state = reduceState(state, { type: "choose", optionId: "accept" }, scenario);
+  state = reduceState(state, { type: "move", direction: 1 }, scenario);
+  assert.equal(state.stepIndex, 11);
+  state = reduceState(state, { type: "restart" }, scenario);
+  assert.equal(state.stepIndex, 0);
+  assert.deepEqual(state.choices, {});
+  state = reduceState(state, { type: "jump", index: 11 }, scenario);
+  state = reduceState(state, { type: "choose", optionId: "mitigate" }, scenario);
+  state = reduceState(state, { type: "jump", index: 17 }, scenario);
+  state = reduceState(state, { type: "toggle" }, scenario);
+  assert.equal(state.stepIndex, 0);
+  assert.equal(state.playing, true);
+  assert.deepEqual(state.choices, {});
+  state = reduceState(state, { type: "scenario", scenario: laptopScenario }, scenario);
+  assert.equal(state.scenarioId, laptopScenario.id);
+  assert.equal(state.playing, false);
+  assert.equal(state.stepIndex, 0);
+  assert.deepEqual(state.choices, {});
+  state = reduceState(state, { type: "jump", index: 20 }, laptopScenario);
+  assert.equal(state.stepIndex, 20);
 });

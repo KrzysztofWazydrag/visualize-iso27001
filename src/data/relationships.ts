@@ -28,7 +28,36 @@ const links: EdgeInput[] = [
   ["methodology", "assessment", "sets criteria", "Agreed criteria guide likelihood, consequences and evaluation."],
   ["risk", "assessment", "is assessed", "Assess the described event and its consequences using established criteria."],
   ["assessment", "register", "records", "The risk register captures the assessment, rationale and owner."],
-  ["register", "treatment", "prioritises", "Evaluated risks lead to treatment decisions and agreed actions."],
+  [
+    "register",
+    "decision",
+    "informs a decision",
+    "Recorded assessments, owners and criteria support choosing an appropriate treatment option.",
+  ],
+  [
+    "decision",
+    "treatment",
+    "defines the response",
+    "The approved option becomes a treatment plan with selected safeguards, owners and review criteria.",
+  ],
+  [
+    "treatment",
+    "selection",
+    "determines safeguards",
+    "The treatment objective drives selection of controls capable of achieving it.",
+  ],
+  [
+    "selection",
+    "soa",
+    "records justification",
+    "The SoA captures selected necessary controls, their inclusion rationale and implementation status.",
+  ],
+  [
+    "soa",
+    "implementation",
+    "states required controls",
+    "Control decisions recorded in the SoA guide implementation; the SoA itself does not implement a safeguard.",
+  ],
   [
     "requirements",
     "treatment",
@@ -49,7 +78,7 @@ const links: EdgeInput[] = [
   ],
   ["context", "soa", "informs applicability", "Business context influences applicability and exclusion reasoning."],
   [
-    "treatment",
+    "selection",
     "annex",
     "checks for omissions",
     "Compare the necessary controls against Annex A to detect overlooked protection needs.",
@@ -61,6 +90,46 @@ const links: EdgeInput[] = [
     "Comparison with the reference set supports applicability and exclusion justifications.",
   ],
   ["soa", "annex", "maps decisions", "The SoA documents how necessary controls relate to the Annex A reference set."],
+  [
+    "soa",
+    "audit",
+    "is sampled",
+    "An auditor samples applicability decisions and traces their basis, implementation and supporting evidence.",
+  ],
+  [
+    "audit",
+    "register",
+    "traces the basis",
+    "Auditors can work backwards from a control to the risk assessment and treatment rationale, or another relevant requirement.",
+    true,
+  ],
+  [
+    "monitoring",
+    "assessment",
+    "updates assumptions",
+    "Effectiveness results inform reassessment of likelihood, consequences and remaining risk.",
+    true,
+  ],
+  ...["A.7.1", "A.7.2", "A.7.3", "A.7.4"].flatMap((id): EdgeInput[] => [
+    [
+      "selection",
+      id,
+      "selects a safeguard",
+      "The chosen treatment and relevant obligations justify the protection outcome represented by this control.",
+    ],
+    [
+      id,
+      "soa",
+      "records applicability",
+      "The SoA records the inclusion reason and implementation status of the necessary control.",
+    ],
+    [
+      id,
+      "implementation",
+      "is put into operation",
+      "The control owner applies and operates a concrete measure appropriate to the protected information.",
+    ],
+  ]),
   ["soa", "policies", "informs rules", "Recorded control decisions inform topic-specific expectations."],
   [
     "security-policy",

@@ -27,6 +27,15 @@ export interface Clause {
   title: string;
   summary: string;
   relatedNodes: string[];
+  learningPathId?: string;
+}
+export interface LearningPath {
+  id: string;
+  title: string;
+  description: string;
+  steps: { nodeId: string; label: string }[];
+  relationships: string[];
+  note: string;
 }
 export interface Control {
   id: string;
@@ -56,6 +65,13 @@ export interface ScenarioStep {
   takeaway: string;
   packet: string;
   artefactChanges: ArtefactChange[];
+  decision?: ScenarioDecision;
+}
+export interface ScenarioDecision {
+  question: string;
+  context: string;
+  continueWith: string;
+  options: { id: string; title: string; description: string; feedback: string }[];
 }
 export interface Scenario {
   id: string;

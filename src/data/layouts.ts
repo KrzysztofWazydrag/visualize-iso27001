@@ -36,7 +36,8 @@ function snakeLayout(rows: string[][], width = 1110): GraphLayout {
 }
 export const scenarioLayout = snakeLayout([
   ["context", "identification", "risk", "assessment"],
-  ["soa", "treatment", "register", "annex"],
+  ["selection", "treatment", "decision", "register"],
+  ["annex", "soa", "organisational"],
   ["technical", "implementation", "evidence", "monitoring"],
   ["verification", "corrective", "finding", "audit"],
   ["improvement", "review"],
@@ -44,11 +45,25 @@ export const scenarioLayout = snakeLayout([
 export const documentLayout = snakeLayout([
   ["context", "parties", "requirements", "scope"],
   ["security-policy", "methodology", "identification", "risk"],
-  ["soa", "treatment", "register", "assessment"],
-  ["annex", "policies", "procedures", "organisational"],
+  ["treatment", "decision", "register", "assessment"],
+  ["selection", "annex", "soa", "policies"],
+  ["procedures", "organisational"],
   ["technical", "implementation", "evidence", "monitoring"],
   ["verification", "corrective", "finding", "audit"],
   ["improvement", "review"],
 ]);
+export const physicalScenarioLayout = snakeLayout([
+  ["context", "requirements", "identification", "risk"],
+  ["decision", "register", "assessment", "methodology"],
+  ["treatment", "selection", "annex", "soa"],
+  ["A.7.1", "A.7.2", "A.7.3", "A.7.4"],
+  ["organisational", "implementation", "evidence", "monitoring"],
+  ["audit", "finding", "corrective", "verification"],
+  ["improvement", "review"],
+]);
+export const scenarioLayouts: Record<string, GraphLayout> = {
+  "laptop-encryption": scenarioLayout,
+  "missing-justification": physicalScenarioLayout,
+};
 export const NODE_WIDTH = 200;
 export const NODE_HEIGHT = 110;

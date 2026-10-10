@@ -1,10 +1,12 @@
 import type { View, Scenario } from "../types";
-import { nextStep } from "./playback";
+import { nextStep, firstUnresolvedDecision } from "./playback";
 export interface AppState {
   view: View;
   selected: string;
   stepIndex: number;
   playing: boolean;
+  scenarioId: string;
+  choices: Record<string, string>;
 }
 export type AppAction =
   | { type: "view"; view: View }
@@ -15,13 +17,27 @@ export type AppAction =
   | { type: "toggle" }
   | { type: "restart" }
   | { type: "pause" };
-export const initialState: AppState = { view: "map", selected: "clause-6", stepIndex: 0, playing: false };
-export function reduceState(state: AppState, action: AppAction, scenario: Scenario): AppState {
+export type ScenarioAction = { type: "scenario"; scenario: Scenario } | { type: "choose"; optionId: string };
+export const initialState: AppState = {
+  view: "map",
+  selected: "clause-6",
+  stepIndex: 0,
+  playing: false,
+  scenarioId: "laptop-encryption",
+  choices: {},
+};
+export function reduceState(state: AppState, action: AppAction | ScenarioAction, scenario: Scenario): AppState {
   const last = scenario.steps.length - 1;
   function stepState(index: number, playing = false) {
-    const safe = Math.max(0, Math.min(last, index));
+    const gate = firstUnresolvedDecision(scenario, state.choices);
+    const safe = Math.max(0, Math.min(last, index, gate));
     const active = scenario.steps[safe].activeNodes;
-    return { ...state, stepIndex: safe, selected: active[active.length - 1], playing: playing && safe < last };
+    return {
+      ...state,
+      stepIndex: safe,
+      selected: active[active.length - 1],
+      playing: playing && safe < last && safe < gate,
+    };
   }
   switch (action.type) {
     case "view": {
@@ -45,10 +61,26 @@ export function reduceState(state: AppState, action: AppAction, scenario: Scenar
     case "tick":
       return state.playing ? stepState(nextStep(state.stepIndex, scenario.steps.length, 1), true) : state;
     case "toggle":
-      return state.stepIndex === last ? stepState(0, true) : { ...state, playing: !state.playing };
+      if (state.stepIndex === last) return { ...stepState(0, true), choices: {} };
+      if (state.stepIndex >= firstUnresolvedDecision(scenario, state.choices)) return { ...state, playing: false };
+      return { ...state, playing: !state.playing };
     case "restart":
-      return stepState(0);
+      return { ...stepState(0), choices: {} };
     case "pause":
       return { ...state, playing: false };
+    case "scenario":
+      return {
+        ...state,
+        scenarioId: action.scenario.id,
+        stepIndex: 0,
+        playing: false,
+        choices: {},
+        selected: action.scenario.steps[0].activeNodes[0],
+      };
+    case "choose": {
+      const step = scenario.steps[state.stepIndex];
+      if (!step.decision?.options.some((option) => option.id === action.optionId)) return state;
+      return { ...state, playing: false, choices: { ...state.choices, [step.id]: action.optionId } };
+    }
   }
 }

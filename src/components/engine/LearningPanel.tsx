@@ -3,6 +3,8 @@ import { nodeById, typeLabels } from "@/data/nodes";
 import { relationships } from "@/data/relationships";
 import { controls } from "@/data/controls";
 import { clauses } from "@/data/clauses";
+import { learningPaths } from "@/data/learningPaths";
+import { TreatmentTrail } from "./TreatmentTrail";
 import type { LearningNode } from "@/types";
 interface Props {
   node: LearningNode;
@@ -11,6 +13,7 @@ interface Props {
 export function LearningPanel({ node, onSelect }: Props) {
   const control = controls.find((c) => c.id === node.id);
   const clause = clauses.find((c) => c.id === node.id);
+  const path = learningPaths.find((item) => item.id === clause?.learningPathId);
   const incoming = relationships.filter((r) => r.target === node.id);
   const outgoing = relationships.filter((r) => r.source === node.id);
   return (
@@ -23,6 +26,7 @@ export function LearningPanel({ node, onSelect }: Props) {
       <div className="panel-content" key={node.id}>
         <span className={`type-badge type-${node.type}`}>{typeLabels[node.type]}</span>
         <h2>{node.title}</h2>
+        {path && <TreatmentTrail path={path} onSelect={onSelect} compact />}
         <section>
           <h3>What is this?</h3>
           <p>{node.description}</p>

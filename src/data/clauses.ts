@@ -21,7 +21,18 @@ export const clauses: Clause[] = [
     title: "Planning",
     summary:
       "Set objectives, assess information security risks and decide how to treat them. Plan changes deliberately.",
-    relatedNodes: ["methodology", "risk", "assessment", "register", "treatment", "soa"],
+    relatedNodes: [
+      "methodology",
+      "risk",
+      "assessment",
+      "register",
+      "decision",
+      "treatment",
+      "selection",
+      "soa",
+      "annex",
+    ],
+    learningPathId: "risk-to-assurance",
   },
   {
     id: "clause-7",

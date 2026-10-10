@@ -2,7 +2,8 @@ import { Play, Pause, SkipBack, SkipForward, RotateCcw, ChevronDown, FileText, A
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { nodeById } from "@/data/nodes";
-import { snapshotAt } from "@/lib/playback";
+import { snapshotAt, firstUnresolvedDecision } from "@/lib/playback";
+import { ScenarioDecision } from "./ScenarioDecision";
 import type { Scenario } from "@/types";
 interface Props {
   scenario: Scenario;
@@ -14,6 +15,8 @@ interface Props {
   speed: number;
   onSpeed: (value: number) => void;
   onJump: (index: number) => void;
+  choices: Record<string, string>;
+  onChoose: (id: string) => void;
 }
 export function ScenarioPlayer({
   scenario,
@@ -25,10 +28,14 @@ export function ScenarioPlayer({
   speed,
   onSpeed,
   onJump,
+  choices,
+  onChoose,
 }: Props) {
   const step = scenario.steps[stepIndex];
   const phases = [...new Set(scenario.steps.map((s) => s.phase))];
-  const changes = snapshotAt(scenario, stepIndex);
+  const changes = snapshotAt(scenario, stepIndex, choices);
+  const gate = firstUnresolvedDecision(scenario, choices);
+  const blocked = stepIndex >= gate;
   return (
     <>
       <div className="scenario-story" aria-live="polite" aria-atomic="true">
@@ -41,6 +48,7 @@ export function ScenarioPlayer({
           <p>{step.explanation}</p>
         </div>
       </div>
+      {step.decision && <ScenarioDecision decision={step.decision} choice={choices[step.id]} onChoose={onChoose} />}
       <div className="phase-progress" aria-label="Scenario phases">
         {phases.map((phase) => {
           const first = scenario.steps.findIndex((s) => s.phase === phase);
@@ -49,6 +57,8 @@ export function ScenarioPlayer({
             <button
               key={phase}
               className={cn(step.phase === phase && "current", completed && "complete")}
+              disabled={first > gate}
+              title={first > gate ? "Complete the treatment decision first" : undefined}
               onClick={() => {
                 onJump(first);
               }}
@@ -75,7 +85,7 @@ export function ScenarioPlayer({
           >
             <SkipBack />
           </Button>
-          <Button className="play-button" onClick={onToggle}>
+          <Button className="play-button" onClick={onToggle} disabled={blocked}>
             {playing ? <Pause size={15} /> : <Play size={15} />}
             {playing ? "Pause" : stepIndex === scenario.steps.length - 1 ? "Replay" : "Play"}
           </Button>
@@ -83,7 +93,7 @@ export function ScenarioPlayer({
             variant="outline"
             size="icon"
             aria-label="Next step"
-            disabled={stepIndex === scenario.steps.length - 1}
+            disabled={stepIndex === scenario.steps.length - 1 || blocked}
             onClick={() => {
               onMove(1);
             }}
@@ -116,12 +126,18 @@ export function ScenarioPlayer({
             title={`Step ${index + 1}: ${s.title}`}
             aria-label={`Go to step ${index + 1}: ${s.title}`}
             aria-current={index === stepIndex ? "step" : undefined}
+            disabled={index > gate}
             onClick={() => {
               onJump(index);
             }}
           />
         ))}
       </div>
+      {blocked && (
+        <p className="decision-gate-note">
+          Choose a justified treatment to continue. Each option has feedback for this example.
+        </p>
+      )}
       <p className="scenario-takeaway">
         <span>THE CONNECTION</span>
         {step.takeaway}

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { nodeById, typeLabels } from "@/data/nodes";
 import { relationships } from "@/data/relationships";
 import { NODE_WIDTH as W, NODE_HEIGHT as H } from "@/data/layouts";
-import type { GraphLayout, NodePosition, ScenarioStep } from "@/types";
+import type { GraphLayout, NodePosition, ScenarioStep, LearningPath } from "@/types";
 
 interface Props {
   layout: GraphLayout;
@@ -16,8 +16,9 @@ interface Props {
   showLabels: boolean;
   showFeedback: boolean;
   filter?: string;
+  focus?: LearningPath;
 }
-export function Graph({ layout, selected, onSelect, step, showLabels, showFeedback, filter = "" }: Props) {
+export function Graph({ layout, selected, onSelect, step, showLabels, showFeedback, filter = "", focus }: Props) {
   const viewport = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(0.85);
   const [fit, setFit] = useState(0.85);
@@ -37,16 +38,16 @@ export function Graph({ layout, selected, onSelect, step, showLabels, showFeedba
     };
   }, [layout.width]);
   useEffect(() => {
-    if (!step) return;
     const element = viewport.current;
-    const position = layout.positions.find((p) => p.id === step.activeNodes[step.activeNodes.length - 1]);
+    const target = step ? step.activeNodes[step.activeNodes.length - 1] : selected;
+    const position = layout.positions.find((p) => p.id === target);
     if (!element || !position) return;
     element.scrollTo({
       top: Math.max(0, (position.y + H / 2) * zoom - element.clientHeight / 2),
       left: Math.max(0, (position.x + W / 2) * zoom - element.clientWidth / 2),
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
     });
-  }, [step, layout.positions, zoom]);
+  }, [step, selected, layout.positions, zoom]);
   const positions: Partial<Record<string, NodePosition>> = Object.fromEntries(layout.positions.map((p) => [p.id, p]));
   const visibleEdges = relationships.filter(
     (edge) => positions[edge.source] && positions[edge.target] && (showFeedback || !edge.feedback),
@@ -109,9 +110,10 @@ export function Graph({ layout, selected, onSelect, step, showLabels, showFeedba
                 const target = positions[edge.target];
                 if (!source || !target) return null;
                 const geo = edgeGeometry(source, target, edge, layout);
+                const focused = focus?.relationships.includes(edge.id) ?? false;
                 const active = step
                   ? step.activeRelationships.includes(edge.id)
-                  : edge.source === selected || edge.target === selected;
+                  : focused || edge.source === selected || edge.target === selected;
                 const pathId = `${marker}-${edge.id}`;
                 return (
                   <g
@@ -120,7 +122,7 @@ export function Graph({ layout, selected, onSelect, step, showLabels, showFeedba
                       "relationship",
                       edge.feedback && "feedback",
                       active && "active",
-                      step && !active && "receded",
+                      Boolean(step ?? focus) && !active && "receded",
                     )}
                     data-edge={edge.id}
                   >
@@ -143,7 +145,7 @@ export function Graph({ layout, selected, onSelect, step, showLabels, showFeedba
             </svg>
             {layout.positions.map((p) => {
               const n = nodeById[p.id];
-              const active = step?.activeNodes.includes(n.id);
+              const active = step ? step.activeNodes.includes(n.id) : focus?.steps.some((item) => item.nodeId === n.id);
               const matches =
                 !filter || `${n.title} ${n.shortDescription} ${n.type}`.toLowerCase().includes(filter.toLowerCase());
               const clause = n.type === "requirement" ? n.clauseRefs[0] : undefined;
@@ -161,7 +163,7 @@ export function Graph({ layout, selected, onSelect, step, showLabels, showFeedba
                     `type-${n.type}`,
                     selected === n.id && "selected",
                     active && "step-active",
-                    step && !active && "receded",
+                    Boolean(step ?? focus) && !active && selected !== n.id && "receded",
                     !matches && "filtered",
                     !step && neighbours.has(n.id) && "connected",
                   )}

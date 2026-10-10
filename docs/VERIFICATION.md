@@ -31,3 +31,20 @@ Verified the production `dist/` output served with Python's ordinary static HTTP
 Source, dependencies, configuration and CI were checked for removed authentication, Supabase/database, API, server-adapter and environment configuration. Fonts and educational data are local. This is functional browser verification with practical keyboard checks, not a full assistive-technology or cross-browser certification. Primary-source review informed the original educational summaries; this is not independent certification of the educational content.
 
 Local screenshots from verification are kept in the ignored `docs/screenshots/` directory. The README records run commands, deployment instructions and deferred features.
+
+## Risk treatment extension — 10 October 2026
+
+`npm run verify` passed after the extension: clean ESLint; Astro/strict TypeScript checked 31 files with zero errors, warnings or hints; all 18 model tests passed; one static page built successfully. No dependency or runtime-service changes were introduced.
+
+The six additional model tests cover trail adjacency, both scenario graphs and real relationships, autoplay and jump boundaries, feedback without adopting alternative answers, selected mitigation unlocking treatment/SoA/verified closure, and choice isolation across revisiting, restart, replay and scenario switching.
+
+Browser acceptance used the static production output in Chrome:
+
+- The selector opens the 18-step physical-access story and returns to the 21-step laptop story at step 1 with Play available.
+- Accept, Transfer and Avoid each show their own contextual feedback while Next and future steps remain disabled. Enter selects Mitigate and unlocks continuation; step 13 and the final step are reachable. Restart clears the decision.
+- Autoplay from step 11 at 2× stops at step 12, with Play/Next and future steps disabled until the continuing choice is selected.
+- Clause 6 exposes the shared treatment trail. Clicking its Document Flow treatment-plan button updates the learning panel; the focus checkbox allows the wider graph to be explored.
+- At 390 × 844 the choice UI and trail stack vertically, the scenario selector works and the page has no horizontal overflow. The Document Flow layout was also inspected at 1440 × 1000. Temporary viewport overrides were reset.
+- No application console errors or warnings were captured in these flows.
+
+These checks verify functionality and practical keyboard operation, not a full assistive-technology audit or independent educational-content certification.

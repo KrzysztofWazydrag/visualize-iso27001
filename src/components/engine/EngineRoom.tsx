@@ -21,14 +21,16 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { initialState, reduceState } from "@/lib/state";
 import { nodes, nodeById, typeLabels } from "@/data/nodes";
-import { laptopScenario } from "@/data/scenarios";
-import { mapLayout, scenarioLayout, documentLayout } from "@/data/layouts";
+import { laptopScenario, scenarios } from "@/data/scenarios";
+import { mapLayout, scenarioLayouts, documentLayout } from "@/data/layouts";
+import { treatmentJourney } from "@/data/learningPaths";
 import type { View, NodeType } from "@/types";
 import { Graph } from "./Graph";
 import { LearningPanel } from "./LearningPanel";
 import { ScenarioPlayer } from "./ScenarioPlayer";
 import { ControlExplorer } from "./ControlExplorer";
 import { AuditMode } from "./AuditMode";
+import { TreatmentTrail } from "./TreatmentTrail";
 const views: { id: View; title: string; icon: LucideIcon; label: string; description: string }[] = [
   {
     id: "map",
@@ -49,7 +51,7 @@ const views: { id: View; title: string; icon: LucideIcon; label: string; descrip
     title: "Scenario Mode",
     icon: Play,
     label: "One issue. The whole system.",
-    description: "Watch a laptop encryption gap travel from discovery to continual improvement.",
+    description: "Follow a decision through risks, controls, evidence and improvement. Choose a story to explore.",
   },
   {
     id: "controls",
@@ -68,11 +70,13 @@ const views: { id: View; title: string; icon: LucideIcon; label: string; descrip
 ];
 export function EngineRoom() {
   const [state, dispatch] = useReducer(
-    (s: typeof initialState, a: Parameters<typeof reduceState>[1]) => reduceState(s, a, laptopScenario),
+    (s: typeof initialState, a: Parameters<typeof reduceState>[1]) =>
+      reduceState(s, a, scenarios.find((item) => item.id === s.scenarioId) ?? laptopScenario),
     initialState,
   );
   const [showLabels, setShowLabels] = useState(true);
   const [showFeedback, setShowFeedback] = useState(true);
+  const [focusTreatment, setFocusTreatment] = useState(true);
   const [panelOpen, setPanelOpen] = useState(true);
   const [search, setSearch] = useState("");
   const [speed, setSpeed] = useState(1);
@@ -81,8 +85,10 @@ export function EngineRoom() {
   const aboutTrigger = useRef<HTMLButtonElement>(null);
   const previousFocus = useRef<HTMLElement | null>(null);
   const currentView = views.find((v) => v.id === state.view) ?? views[0];
-  const step = laptopScenario.steps[state.stepIndex];
-  const layout = state.view === "map" ? mapLayout : state.view === "scenario" ? scenarioLayout : documentLayout;
+  const scenario = scenarios.find((item) => item.id === state.scenarioId) ?? laptopScenario;
+  const step = scenario.steps[state.stepIndex];
+  const layout =
+    state.view === "map" ? mapLayout : state.view === "scenario" ? scenarioLayouts[scenario.id] : documentLayout;
   const isGraph = state.view === "map" || state.view === "documents" || state.view === "scenario";
   useEffect(() => {
     const syncHash = () => {
@@ -104,7 +110,7 @@ export function EngineRoom() {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [state.playing, state.view, state.stepIndex, speed]);
+  }, [state.playing, state.view, state.stepIndex, scenario.id, speed]);
   useEffect(() => {
     const onHidden = () => {
       if (document.hidden) dispatch({ type: "pause" });
@@ -188,7 +194,7 @@ export function EngineRoom() {
             <Laptop size={20} />
           </span>
           <span className="eyebrow">FOLLOW A REAL-WORLD EXAMPLE</span>
-          <h3>The unencrypted laptop</h3>
+          <h3>{scenario.title}</h3>
           <p>
             One security issue.
             <br />A connected chain of decisions.
@@ -277,6 +283,18 @@ export function EngineRoom() {
                         <small>{layout.positions.length} nodes</small>
                       </div>
                       <div className="map-options">
+                        {state.view === "documents" && (
+                          <label>
+                            <input
+                              type="checkbox"
+                              checked={focusTreatment}
+                              onChange={(event) => {
+                                setFocusTreatment(event.target.checked);
+                              }}
+                            />
+                            Focus treatment chain
+                          </label>
+                        )}
                         <label>
                           <input
                             type="checkbox"
@@ -300,20 +318,45 @@ export function EngineRoom() {
                       </div>
                     </div>
                   ) : (
-                    <div className="scenario-header">
-                      <span className="scenario-mini-icon">
-                        <Laptop size={18} />
-                      </span>
-                      <div>
-                        <strong>{laptopScenario.title}</strong>
-                        <span>Guided simulation · 21 steps · fictional company</span>
+                    <div className="scenario-introduction">
+                      <label className="scenario-selector">
+                        Choose a scenario
+                        <select
+                          value={scenario.id}
+                          onChange={(event) => {
+                            const next = scenarios.find((item) => item.id === event.target.value);
+                            if (next) {
+                              dispatch({ type: "scenario", scenario: next });
+                              setSearch("");
+                              setSpeed(1);
+                              setPanelOpen(true);
+                            }
+                          }}
+                        >
+                          {scenarios.map((item, index) => (
+                            <option key={item.id} value={item.id}>
+                              {String(index + 1).padStart(2, "0")} · {item.title}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <div className="scenario-header">
+                        <span className="scenario-mini-icon">
+                          <Laptop size={18} />
+                        </span>
+                        <div>
+                          <strong>{scenario.title}</strong>
+                          <span>Guided simulation · {scenario.steps.length} steps · fictional company</span>
+                        </div>
+                        <span className="scenario-pill">
+                          SCENARIO {String(scenarios.indexOf(scenario) + 1).padStart(2, "0")}
+                        </span>
                       </div>
-                      <span className="scenario-pill">SCENARIO 01</span>
                     </div>
                   )}
                   {state.view === "scenario" && (
                     <ScenarioPlayer
-                      scenario={laptopScenario}
+                      scenario={scenario}
                       stepIndex={state.stepIndex}
                       playing={state.playing}
                       onMove={(direction) => {
@@ -330,10 +373,17 @@ export function EngineRoom() {
                       onJump={(index) => {
                         dispatch({ type: "jump", index });
                       }}
+                      choices={state.choices}
+                      onChoose={(optionId) => {
+                        dispatch({ type: "choose", optionId });
+                      }}
                     />
                   )}
+                  {state.view === "documents" && (
+                    <TreatmentTrail path={treatmentJourney} selected={state.selected} onSelect={select} />
+                  )}
                   <Graph
-                    key={state.view}
+                    key={state.view === "scenario" ? scenario.id : state.view}
                     layout={layout}
                     selected={state.selected}
                     onSelect={select}
@@ -341,6 +391,7 @@ export function EngineRoom() {
                     showLabels={state.view === "scenario" || showLabels}
                     showFeedback={state.view === "scenario" || showFeedback}
                     filter={search}
+                    focus={state.view === "documents" && focusTreatment ? treatmentJourney : undefined}
                   />
                   <div className="legend">
                     {(Object.keys(typeLabels) as NodeType[]).map((type) => (

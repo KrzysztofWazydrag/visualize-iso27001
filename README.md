@@ -14,7 +14,7 @@ npm run dev
 Open the local URL shown by Astro, normally `http://localhost:4321`.
 
 ```bash
-npm run verify    # lint, strict Astro/TypeScript check, 12 model/playback tests, static build
+npm run verify    # lint, strict Astro/TypeScript check, 18 model/playback tests, static build
 npm run preview   # serve the production build
 ```
 
@@ -23,9 +23,9 @@ No `.env` file, secrets, login or external service is needed. Fonts and all lear
 ## Explore
 
 - **ISMS Map:** clauses 4–10 and the separate Annex A reference set. Select nodes to explore incoming/outgoing relationships and practical explanations.
-- **Document Flow:** 26 connected concepts with meaningful relationships, highlighted selected connections and feedback loops. All the requested common artefacts are included.
-- **Scenario Mode:** one complete 21-step laptop-encryption example. Play/Pause, Previous/Next, Restart, phase jumps, step jumps and speed control. Active paths carry animated information packets. The information ledger shows simulated changes accumulating in artefacts.
-- **Control Explorer:** 6 sample controls across all four Annex A categories. Search/filter, implementation examples, risks, policies, evidence and audit questions.
+- **Document Flow:** 28 connected concepts with meaningful relationships, highlighted selected connections and feedback loops. A clickable treatment trail and focused graph connect assessed risk, the register, treatment decision and plan, control selection, Annex A cross-check, SoA, implementation, evidence and effectiveness review. Clause 6 links to the same trail.
+- **Scenario Mode:** two fictional guided stories: the 21-step laptop-encryption example and **The missing justification**, an 18-step physical-access scenario. Step 12 in the new story offers Accept / Mitigate / Transfer / Avoid with contextual feedback. Playback and future-step jumps wait for the narrative’s justified treatment choice; restart, replay and switching stories clear choices. Play/Pause, Previous/Next, Restart, phase jumps, step jumps and speed control. Active paths carry animated information packets. The information ledger shows simulated changes accumulating in artefacts.
+- **Control Explorer:** 10 sample controls, including physical security A.7.1–A.7.4, across all four Annex A categories. Search/filter, implementation examples, risks, policies, evidence and audit questions.
 - **Audit Mode:** 3 lightweight evidence exercises on encryption, asset inventory and training. Reveal examples and discuss what they prove, their limitations and how to gain assurance.
 
 Nodes are keyboard-operable buttons. The graph viewport supports scrolling and zoom; a searchable node directory provides an alternative. Narrow screens stack the learning panel below the visualisation and allow native graph panning. The guide dialog traps focus and closes with Escape. Reduced-motion preferences suppress the travelling animation.
@@ -51,7 +51,7 @@ Astro produces one static HTML page with a React learning island. React, Tailwin
 | `docs/ARCHITECTURE.md`                      | Starter inspection and implementation decisions                                        |
 | `docs/VERIFICATION.md`                      | Build, browser and responsive verification record                                      |
 
-To add a control, append a structured record in `src/data/controls.ts`; it automatically appears in the explorer and learning panel. To add a scenario, provide ordered steps referencing existing node/relationship IDs, then register it in `src/data/scenarios.ts`. V1 selects the single laptop scenario. Additional graph concepts require an educational record, meaningful relationships and a position in the chosen layout. Run the model tests to catch broken references.
+To add a control, append a structured record in `src/data/controls.ts`; it automatically appears in the explorer and learning panel. To add a scenario, provide ordered steps referencing existing node/relationship IDs, then register it in `src/data/scenarios.ts`. Add its graph layout to `src/data/layouts.ts`. The scenario selector uses the registry; optional `ScenarioDecision` records define the options, feedback and choice that continues the guided narrative. The reducer and ledger both enforce unresolved decision boundaries. Additional graph concepts require an educational record, meaningful relationships and a position in the chosen layout. Run the model tests to catch broken references.
 
 ## Static deployment
 
@@ -67,7 +67,7 @@ Starter authentication, Supabase packages/configuration, middleware, API routes,
 
 ## Educational boundaries and references
 
-Content uses original practical summaries. It distinguishes management-system requirements, control references, artefacts, operational measures, evidence and assurance. Names, owners, timings, company facts and scores in the scenario are fictional examples. The risk matrix is an example, not an ISO-prescribed formula. An ISMS has multiple paths and feedback loops; the scenario is one teaching narrative.
+Content uses original practical summaries. It distinguishes management-system requirements, control references, artefacts, operational measures, evidence and assurance. Names, owners, timings, company facts and scores in the scenario are fictional examples. The risk matrix is an example, not an ISO-prescribed formula. An ISMS has multiple paths and feedback loops; each scenario is one teaching narrative. Controls can address multiple risks and legal or contractual obligations. A missing one-to-one risk link alone does not establish a nonconformity; the second story supplies evidence of an omitted assessment input and absent selection rationale. Transfer does not remove the organisation’s information-protection responsibilities.
 
 The SoA explains necessary controls, inclusion reasons, implementation status and reasons for excluding Annex A references. Necessary custom controls can also be included. The full set of Annex A references must be considered for omissions; controls are not all automatically required.
 
@@ -82,9 +82,9 @@ This application does not reproduce the ISO standard and is not a compliance or 
 
 ## Limitations and intentionally deferred work
 
-The graph uses deterministic layouts and native scrolling rather than drag-to-rearrange nodes. Relationships are an explanatory sample, not an exhaustive representation of every organisation. Only one scenario, six control references and three evidence exercises are included. The full standard remains the authoritative source; a qualified content review would be useful before broader educational publication.
+The graph uses deterministic layouts and native scrolling rather than drag-to-rearrange nodes. Relationships are an explanatory sample, not an exhaustive representation of every organisation. Two scenarios, ten control references and three evidence exercises are included. The full standard remains the authoritative source; a qualified content review would be useful before broader educational publication.
 
-Intentionally deferred: full 93-control dataset, additional scenarios, full audit simulation, certification tracking, saving learner progress, real documents or organisation-specific ISMS data. Authentication, user accounts, databases, backend persistence, organisation management, commercial SaaS features and billing are outside this MVP.
+Intentionally deferred: full 93-control dataset, more scenarios, full audit simulation, certification tracking, saving learner progress, real documents or organisation-specific ISMS data. Authentication, user accounts, databases, backend persistence, organisation management, commercial SaaS features and billing are outside this MVP.
 
 ## Starter attribution
 

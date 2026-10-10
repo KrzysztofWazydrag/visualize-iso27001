@@ -20,3 +20,10 @@ Reuse: Astro layout/page architecture, React integration, theme token convention
 ## Verification
 
 Use strict type checking, starter ESLint/Prettier, data integrity and playback transition tests, production static build, and browser interaction/responsive checks. Serve dist with an ordinary static HTTP server to demonstrate that there is no runtime backend.
+
+## Risk treatment learning extension — 10 October 2026
+
+- `src/data/learningPaths.ts` defines a shared clickable treatment trail. Clause 6 and Document Flow consume it; the graph can focus its real relationships while retaining the wider ISMS network. Treatment decision and control selection are explicit activity nodes, and the existing treatment-plan node connects the register with the chosen safeguards and SoA.
+- Scenarios are registered in `src/data/scenarios.ts`, with per-story layouts in `src/data/layouts.ts` and a shared typed step builder in `src/data/scenarioSteps.ts`. The new physical-access narrative lives in `src/data/missingJustification.ts`; its A.7.1–A.7.4 references share the existing control explorer and learning panel.
+- Optional decisions belong to scenario content. Choice state belongs to the selected simulation. A single unresolved-decision calculation gates playback, navigation and cumulative artefact snapshots, so later treatment records cannot appear before the learner chooses the response used by this story. Non-continuing answers give contextual feedback without adopting them as treatment. Restart, replay and scenario selection reset answers; view navigation pauses playback.
+- The story validates and justifies existing safeguards rather than inventing historical decisions. Obligations remain assessment inputs; controls need not have a one-to-one relationship with risks. Mitigation is appropriate for the stated business need, exposure and acceptance threshold, not a universal answer for every ISMS.
